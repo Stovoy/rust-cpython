@@ -286,12 +286,6 @@ impl PyString {
     fn data_impl(&self, _py: Python) -> PyStringData {
         let ptr = self.as_ptr();
         unsafe {
-            let ready = ffi::PyUnicode_READY(ptr);
-            if ready < 0 {
-                // should fail only on OOM
-                ffi::PyErr_Print();
-                panic!("PyUnicode_READY failed");
-            }
             let size = ffi::PyUnicode_GET_LENGTH(ptr) as usize;
             let data = ffi::PyUnicode_DATA(ptr);
             let kind = ffi::PyUnicode_KIND(ptr);

@@ -434,9 +434,6 @@ extern "C" {
     #[cfg(all(not(Py_LIMITED_API), not(Py_3_10)))]
     #[deprecated(since = "0.6.1", note = "Deprecated since Python 3.3; removed in 3.10")]
     pub fn PyUnicode_AsUnicodeCopy(unicode: *mut PyObject) -> *mut Py_UNICODE;
-
-    #[cfg(not(Py_LIMITED_API))]
-    fn _PyUnicode_Ready(o: *mut PyObject) -> c_int;
 }
 
 #[repr(C)]
@@ -494,7 +491,6 @@ pub const PyUnicode_4BYTE_KIND: u32 = 4;
 #[inline]
 pub unsafe fn PyUnicode_KIND(o: *mut PyObject) -> u32 {
     debug_assert!(PyUnicode_Check(o) > 0);
-    debug_assert!(PyUnicode_IS_READY(o));
     let state = (*(o as *mut PyASCIIObject)).state;
     (state >> 2) & 7
 }
@@ -502,7 +498,6 @@ pub unsafe fn PyUnicode_KIND(o: *mut PyObject) -> u32 {
 #[cfg(not(Py_LIMITED_API))]
 pub unsafe fn PyUnicode_DATA(o: *mut PyObject) -> *mut c_void {
     debug_assert!(PyUnicode_Check(o) > 0);
-    debug_assert!(PyUnicode_IS_READY(o));
     if PyUnicode_IS_COMPACT(o) {
         // fn _PyUnicode_COMPACT_DATA
         if PyUnicode_IS_ASCII(o) {
@@ -522,25 +517,6 @@ pub unsafe fn PyUnicode_DATA(o: *mut PyObject) -> *mut c_void {
 #[inline]
 pub unsafe fn PyUnicode_GET_LENGTH(o: *mut PyObject) -> Py_ssize_t {
     debug_assert!(PyUnicode_Check(o) > 0);
-    debug_assert!(PyUnicode_IS_READY(o));
     (*(o as *mut PyASCIIObject)).length
 }
 
-#[cfg(not(Py_LIMITED_API))]
-#[inline]
-unsafe fn PyUnicode_IS_READY(o: *mut PyObject) -> bool {
-    let ready_bit = 1 << 7;
-    let state = (*(o as *mut PyASCIIObject)).state;
-    (state & ready_bit) != 0
-}
-
-#[cfg(not(Py_LIMITED_API))]
-#[inline]
-pub unsafe fn PyUnicode_READY(o: *mut PyObject) -> c_int {
-    debug_assert!(PyUnicode_Check(o) > 0);
-    if PyUnicode_IS_READY(o) {
-        0
-    } else {
-        _PyUnicode_Ready(o)
-    }
-}
